@@ -1,0 +1,419 @@
+/*
+ * File:   newmain.c
+ * Author: ATHUL
+ *
+ * Created on 12 September, 2022, 12:00 PM
+ */
+
+
+/*
+
+
+#include"CONFIG.h"
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+
+ 
+
+#define _XTAL_FREQ 4000000
+#define F_CPU _XTAL_FREQ/9600// value to calculate baud rate
+
+
+char data;
+void UART_Initial(long baud_rate);
+char USART_Read(void);
+char USART_Read(void);
+
+void UART_Initial(long baud_rate)
+{
+    TRISCbits.RC7 = 1;
+ 
+TXSTAbits.BRGH=1;// Default Baud rate speed 
+BAUDCONbits.BRG16 = 0;
+//SPBRG1=(_XTAL_FREQ/(16*9600))-1;
+SPBRG1=25;
+ SPBRGH1=0;
+RCSTAbits.SPEN = 1;
+INTCONbits.GIE=1;
+INTCONbits.PEIE=1;
+
+PIR1bits.RC1IF=0;
+TXSTAbits.SYNC = 0; // Selects Asynchronous Serial Communication Mode
+PIE1bits.RC1IE=1;
+RCSTAbits.CREN =1;
+}
+
+void UART_Initialize2(void) {
+    // setup UART
+    TRISCbits.TRISC6 = 0; // TX as output
+    TRISCbits.TRISC7 = 1; // RX as input
+    TXSTA1bits.SYNC = 0; // Async operation
+    TXSTA1bits.TX9 = 0; // No tx of 9th bit
+    TXSTA1bits.TXEN = 1; // Enable transmitter
+    RCSTA1bits.RC9 = 0; // No rx of 9th bit
+    RCSTA1bits.CREN = 1; // Enable receiver
+    RCSTA1bits.SPEN = 1; // Enable serial port
+    // Setting for 19200 BPS
+    BAUDCON1bits.BRG16 = 0; // Divisor at 8 bit
+    TXSTA1bits.BRGH = 1; // No high-speed baudrate
+    SPBRG1 = 25; // divisor value for 19200
+
+    PIE1bits.TX1IE = 0; // disable TX hardware interrupt
+    PIE1bits.RC1IE = 0; // disable RX hardware interrupt
+}
+
+
+void init_uart(void){
+    RCSTA1=0;
+    
+TRISCbits.RC6=0;
+TRISCbits.RC7=1;
+PIR1bits.RCIF=0; 
+    
+    SPBRG1=25;
+     
+     ANSELCbits.ANSC7=0;
+    TXSTA1bits.BRGH=1;
+    PIE1bits.RC1IE=1;
+    INTCONbits.GIE=1;
+    INTCONbits.PEIE=1;
+    
+    
+   
+    BAUDCON1bits.BRG16=0;
+    data=RCREG1;
+    TXSTA1bits.TXEN=1;
+    
+     RCSTA1bits.CREN=1;
+     TXSTA1bits.SYNC=0;
+     RCSTA1bits.SPEN=1;
+   
+}
+
+
+
+
+
+
+
+char USART_Read()
+{
+    
+      if(RCSTAbits.OERR)
+{ 
+RCSTA1bits.CREN = 0;
+__delay_ms(500);
+RCSTA1bits.CREN=1;
+} 
+    
+    
+    while(0==PIR1bits.RC1IF){
+        ;
+    }
+    
+ * 
+    __delay_ms(250);
+    PIR1bits.RC1IF=0;
+
+return(RCREG1); //read the byte from recieve register and return value
+}
+
+char getch(void)
+{
+ return USART_Read();
+}
+
+void main(void) 
+{
+    
+   // TRISA2=0; //Pic microcontroller Port-A as OUTPUT
+    
+TRISAbits.TRISA2=0;
+
+init_uart();
+//UART_Initial(9600);
+
+LATAbits.LA2=1;
+ __delay_ms(500);
+ 
+  LATAbits.LA2=0;
+  __delay_ms(500);
+  
+
+ 
+
+while(1)
+{
+
+ 
+data=getch();
+if(data!='$'){
+LATAbits.LA2=1;
+
+}
+else if(data=='$'){
+LATAbits.LA2=0;
+
+}
+
+}
+
+}
+ 
+ 
+ 
+ 
+ */
+
+
+
+#include"CONFIG.h"
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+
+
+ 
+
+#define _XTAL_FREQ 4000000
+#define F_CPU _XTAL_FREQ/9600//
+
+#define GGA_Buffer_Size 80
+#define GGA_Pointers_Size 20
+
+char GGA_Buffer[GGA_Buffer_Size];              /* to store GGA string */
+char GGA_CODE[5];
+
+unsigned char N_S, E_W;                        /* for getting direction polarity */
+unsigned char GGA_Pointers[GGA_Pointers_Size]; /* to store instances of ',' */
+char CommaCounter;
+char Data_Buffer[15];
+volatile unsigned int GGA_Index;
+volatile unsigned char	IsItGGAString	= 0;
+char data;
+
+char lat_buffer[15];
+  float _latitude;
+  
+  
+char long_buffer[15];
+   float _longitude;
+  
+   float Latitude,Longitude;
+   float Llatitude,Llongitude;
+   
+  float get_longitude(char long_pointer){
+  
+      unsigned char long_index;
+      unsigned char index=long_pointer+1;
+
+      long_index=0;
+      
+      
+      
+      
+      for(;GGA_Buffer[index]!=',';index++){
+      
+          long_buffer[long_index]=GGA_Buffer[index];
+          long_index++;
+      }
+      long_index++;
+      E_W = GGA_Buffer[long_index];
+      
+      _longitude=atof(long_buffer);
+      
+      return(_longitude);
+  }
+  
+  
+float get_latitude(char lat_pointer){
+
+    unsigned char lat_index=lat_pointer+1;
+    
+    unsigned char index=0;
+    
+    
+    
+  
+    
+    for(;GGA_Buffer[lat_index]!=',';lat_index++){
+    
+    lat_buffer[index]=GGA_Buffer[lat_index];
+    index++;
+    
+    }
+ lat_index++;
+  N_S = GGA_Buffer[lat_index];
+_latitude=atof(lat_buffer);
+
+    
+return(_latitude);    
+}
+
+float convert_to_degrees(float NMEA_lat_long){
+
+    float minutes,dec_deg,decimal;
+    int degrees;
+    float position;
+    
+    degrees=(int)(NMEA_lat_long/100.00);
+    minutes=NMEA_lat_long - degrees *100.00;
+    dec_deg= minutes/60.00;
+    decimal=degrees + dec_deg;
+    
+    if(N_S=='S'|| E_W =='W'){
+    decimal *= -1;
+    }
+
+    return (decimal);
+}
+
+
+
+
+void __interrupt() myISR()
+{
+if(RCIF==1) 
+{
+if(RCSTAbits.OERR)
+{ 
+RCSTAbits.CREN = 0;
+NOP();
+RCSTAbits.CREN =1;
+} 
+
+LATAbits.LA2=0;
+
+data = RCREG1;
+
+if(data=='$'){
+
+
+    GGA_Index=0;
+    IsItGGAString=0;
+    CommaCounter=0;
+}
+
+
+else if(IsItGGAString==1){
+
+    if(data==','){
+        GGA_Pointers[CommaCounter++]=GGA_Index;
+    }
+
+    
+    GGA_Buffer[GGA_Index++]=data;
+}
+
+
+
+else if(GGA_CODE[0]=='G' &&GGA_CODE[1]=='N' && GGA_CODE[2]=='R' && GGA_CODE[3]=='M' && GGA_CODE[4]=='C')
+{
+    
+    IsItGGAString=1;
+    GGA_CODE[0]=0;
+    GGA_CODE[1]=0;
+    GGA_CODE[2]=0;
+    GGA_CODE[3]=0;
+    GGA_CODE[4]=0;
+    
+    
+
+LATAbits.LA2=1;
+
+   // 
+ }
+
+else{
+
+
+    GGA_CODE[0]=GGA_CODE[1];
+    GGA_CODE[1]=GGA_CODE[2];
+    GGA_CODE[2]=GGA_CODE[3];
+    GGA_CODE[3]=GGA_CODE[4];
+    GGA_CODE[4]=data;
+
+}
+
+/*
+if(data!='$'){
+LATAbits.LA2=0;
+}
+else if(data=='$'){
+LATAbits.LA2=1;
+}
+*/
+
+
+RCIF=0;
+}
+
+}
+
+void init_uart(void){
+    RCSTA1=0;
+    
+TRISCbits.RC6=0;
+TRISCbits.RC7=1;
+PIR1bits.RCIF=0; 
+    
+    SPBRG1=25;
+     
+     ANSELCbits.ANSC7=0;
+    TXSTA1bits.BRGH=1;
+    
+    PIE1bits.RC1IE=1;
+    INTCONbits.GIE=1;
+    INTCONbits.PEIE=1;
+    
+    
+   
+    BAUDCON1bits.BRG16=0;
+    
+    TXSTA1bits.TXEN=1;
+    
+     RCSTA1bits.CREN=1;
+     TXSTA1bits.SYNC=0;
+     RCSTA1bits.SPEN=1;
+   
+}
+
+
+
+
+void main(void) 
+{
+    
+ 
+    
+TRISAbits.TRISA2=0;
+
+
+init_uart();
+
+
+LATAbits.LA2=1;
+ __delay_ms(500);
+ 
+  LATAbits.LA2=0;
+  __delay_ms(500);
+  
+
+ 
+
+while(1)
+{
+    
+
+ Latitude=get_latitude(GGA_Pointers[1]);
+Longitude=get_longitude(GGA_Pointers[3]);
+
+Llatitude=convert_to_degrees(Latitude);
+Llongitude=convert_to_degrees(Longitude);
+
+
+}
+
+}
+ 
